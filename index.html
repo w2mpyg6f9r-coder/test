@@ -42,7 +42,22 @@
     li {
       margin: 7px 0;
     }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
 
+th {
+  background-color: #f2f2f2;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+}
     .delete-grid,
     .reset-grid,
     .data-grid {
@@ -538,44 +553,63 @@ window.uploadExcel = async function () {
       alert("모든 활동 데이터가 삭제되었습니다.");
     };
 
-    function showData() {
-      const dataView = document.getElementById("dataView");
-      if (!dataView) return;
+function showData() {
+  const dataView = document.getElementById("dataView");
+  if (!dataView) return;
 
-      let html = `
-        <div class="data-grid">
-          <div class="data-column">
-            <h4>학생 목록</h4>
-            <ul>
-      `;
+  let html = `
+    <div class="data-grid">
+      <div class="data-column">
+        <h4>학생 목록</h4>
+        <table>
+          <tr>
+            <th>학번</th>
+            <th>이름</th>
+          </tr>
+  `;
 
-      for (let id in students) {
-        html += `<li>${id} - ${students[id]}</li>`;
-      }
+  for (let id in students) {
+    html += `
+      <tr>
+        <td>${id}</td>
+        <td>${students[id]}</td>
+      </tr>
+    `;
+  }
 
-      html += `
-            </ul>
-          </div>
+  html += `
+        </table>
+      </div>
 
-          <div class="data-column">
-            <h4>활동 목록</h4>
-            <ul>
-      `;
+      <div class="data-column">
+        <h4>활동 목록</h4>
+        <table>
+          <tr>
+            <th>활동명</th>
+            <th>신청 학번</th>
+          </tr>
+  `;
 
-      for (let activity in activities) {
-        const ids = activities[activity].filter(id => id !== "__EMPTY__");
-        html += `<li>${activity}: ${ids.length > 0 ? ids.join(", ") : "신청자 없음"}</li>`;
-      }
+  for (let activity in activities) {
+    const ids = activities[activity].filter(id => id !== "__EMPTY__");
 
-      html += `
-            </ul>
-          </div>
-        </div>
-      `;
+    html += `
+      <tr>
+        <td>${activity}</td>
+        <td>${ids.length > 0 ? ids.join(", ") : "신청자 없음"}</td>
+      </tr>
+    `;
+  }
 
-      dataView.innerHTML = html;
-      updateActivitySelects();
-    }
+  html += `
+        </table>
+      </div>
+    </div>
+  `;
+
+  dataView.innerHTML = html;
+  updateActivitySelects();
+}
 
     function updateActivitySelects() {
       const activityInput = document.getElementById("activityInput");
