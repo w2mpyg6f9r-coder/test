@@ -194,37 +194,55 @@ window.uploadExcel = async function () {
 
   reader.onload = async function (e) {
     try {
+      if (!window.XLSX) {
+        alert("엑셀 라이브러리를 불러오지 못했습니다.");
+        return;
+      }
+
       const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
+      const workbook = window.XLSX.read(data, { type: "array" });
 
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-      const rows = XLSX.utils.sheet_to_json(sheet, {
+      const rows = window.XLSX.utils.sheet_to_json(sheet, {
         header: 1,
         defval: ""
       });
 
-      const headerRow = rows[1];
-
-      let idCol = -1;
+      let headerRowIndex = -1;
+      let classCol = -1;
+      let numberCol = -1;
       let nameCol = -1;
 
-      for (let c = 0; c < headerRow.length; c++) {
-        const value = String(headerRow[c]).trim();
+      for (let r = 0; r < rows.length; r++) {
+        for (let c = 0; c < rows[r].length; c++) {
+          const value = String(rows[r][c]).trim();
 
-        if (value === "번호" || value === "학번") {
-          idCol = c;
+          if (value === "반" || value === "학급") {
+            classCol = c;
+          }
+
+          if (value === "번호" || value === "학번") {
+            numberCol = c;
+          }
+
+          if (value === "이름" || value === "성명") {
+            nameCol = c;
+          }
         }
 
-        if (value === "이름" || value === "성명") {
-          nameCol = c;
+        if (numberCol !== -1 && nameCol !== -1) {
+          headerRowIndex = r;
+          break;
         }
       }
 
-      if (idCol === -1 || nameCol === -1) {
-        alert("번호 또는 이름 열을 찾을 수 없습니다.");
+      if (headerRowIndex === -1) {
+        alert("엑셀에서 번호/학번, 이름 열을 찾지 못했습니다.");
         return;
       }
+
+      const headerRow = rows[headerRowIndex];
 
       let newStudents = {};
       let newActivities = {};
@@ -237,13 +255,23 @@ window.uploadExcel = async function () {
         }
       }
 
-      for (let r = 2; r < rows.length; r++) {
+      for (let r = headerRowIndex + 1; r < rows.length; r++) {
         const row = rows[r];
 
-        const studentId = String(row[idCol]).trim();
+        const studentNumber = String(row[numberCol]).trim();
         const studentName = String(row[nameCol]).trim();
 
-        if (studentId === "" || studentName === "") continue;
+        if (studentNumber === "" || studentName === "") continue;
+
+        let studentId = "";
+
+        if (classCol !== -1 && String(row[classCol]).trim() !== "") {
+          const classNumber = String(row[classCol]).trim();
+          const paddedNumber = studentNumber.padStart(2, "0");
+          studentId = `3${classNumber}${paddedNumber}`;
+        } else {
+          studentId = studentNumber;
+        }
 
         newStudents[studentId] = studentName;
 
@@ -270,19 +298,20 @@ window.uploadExcel = async function () {
       await saveData();
       showData();
 
-      alert(`업로드 완료\n학생 ${Object.keys(students).length}명\n활동 ${Object.keys(activities).length}개`);
+      alert(
+        `업로드 완료\n학생 ${Object.keys(students).length}명\n활동 ${Object.keys(activities).length}개`
+      );
 
       fileInput.value = "";
 
     } catch (err) {
       console.error(err);
-      alert("엑셀 처리 중 오류 발생");
+      alert("엑셀 처리 중 오류 발생: " + err.message);
     }
   };
 
   reader.readAsArrayBuffer(file);
 };
-
     window.searchStudent = function () {
       const id = document.getElementById("searchId").value.trim();
       const result = document.getElementById("result");
