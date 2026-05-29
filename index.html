@@ -182,118 +182,105 @@
     }
 
 window.uploadExcel = async function () {
-const fileInput = document.getElementById("excelFile");
-const file = fileInput.files[0];
+  const fileInput = document.getElementById("excelFile");
+  const file = fileInput.files[0];
 
-if (!file) {
-alert("엑셀 파일을 선택하세요.");
-return;
-}
-
-const reader = new FileReader();
-
-reader.onload = async function (e) {
-try {
-const data = new Uint8Array(e.target.result);
-const workbook = XLSX.read(data, { type: "array" });
-
-```
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-
-  const rows = XLSX.utils.sheet_to_json(sheet, {
-    header: 1,
-    defval: ""
-  });
-
-  // 네 엑셀 구조:
-  // 1행 = 자율/진로/세특
-  // 2행 = 번호, 이름, 활동명
-
-  const headerRow = rows[1];
-
-  let idCol = -1;
-  let nameCol = -1;
-
-  for (let c = 0; c < headerRow.length; c++) {
-    const value = String(headerRow[c]).trim();
-
-    if (value === "번호" || value === "학번") {
-      idCol = c;
-    }
-
-    if (value === "이름" || value === "성명") {
-      nameCol = c;
-    }
-  }
-
-  if (idCol === -1 || nameCol === -1) {
-    alert("번호 또는 이름 열을 찾을 수 없습니다.");
+  if (!file) {
+    alert("엑셀 파일을 선택하세요.");
     return;
   }
 
-  let newStudents = {};
-  let newActivities = {};
+  const reader = new FileReader();
 
-  for (let c = nameCol + 1; c < headerRow.length; c++) {
-    const activityName = String(headerRow[c]).trim();
+  reader.onload = async function (e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
 
-    if (activityName !== "") {
-      newActivities[activityName] = ["__EMPTY__"];
-    }
-  }
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-  // 학생 데이터 시작은 3행
-  for (let r = 2; r < rows.length; r++) {
-    const row = rows[r];
+      const rows = XLSX.utils.sheet_to_json(sheet, {
+        header: 1,
+        defval: ""
+      });
 
-    const studentId = String(row[idCol]).trim();
-    const studentName = String(row[nameCol]).trim();
+      const headerRow = rows[1];
 
-    if (studentId === "" || studentName === "") continue;
+      let idCol = -1;
+      let nameCol = -1;
 
-    newStudents[studentId] = studentName;
+      for (let c = 0; c < headerRow.length; c++) {
+        const value = String(headerRow[c]).trim();
 
-    for (let c = nameCol + 1; c < headerRow.length; c++) {
-      const activityName = String(headerRow[c]).trim();
+        if (value === "번호" || value === "학번") {
+          idCol = c;
+        }
 
-      if (activityName === "") continue;
-
-      const cellValue = String(row[c]).trim();
-
-      if (cellValue !== "") {
-        newActivities[activityName] =
-          newActivities[activityName].filter(
-            x => x !== "__EMPTY__"
-          );
-
-        if (!newActivities[activityName].includes(studentId)) {
-          newActivities[activityName].push(studentId);
+        if (value === "이름" || value === "성명") {
+          nameCol = c;
         }
       }
+
+      if (idCol === -1 || nameCol === -1) {
+        alert("번호 또는 이름 열을 찾을 수 없습니다.");
+        return;
+      }
+
+      let newStudents = {};
+      let newActivities = {};
+
+      for (let c = nameCol + 1; c < headerRow.length; c++) {
+        const activityName = String(headerRow[c]).trim();
+
+        if (activityName !== "") {
+          newActivities[activityName] = ["__EMPTY__"];
+        }
+      }
+
+      for (let r = 2; r < rows.length; r++) {
+        const row = rows[r];
+
+        const studentId = String(row[idCol]).trim();
+        const studentName = String(row[nameCol]).trim();
+
+        if (studentId === "" || studentName === "") continue;
+
+        newStudents[studentId] = studentName;
+
+        for (let c = nameCol + 1; c < headerRow.length; c++) {
+          const activityName = String(headerRow[c]).trim();
+          const cellValue = String(row[c]).trim();
+
+          if (activityName === "") continue;
+
+          if (cellValue !== "") {
+            newActivities[activityName] =
+              newActivities[activityName].filter(x => x !== "__EMPTY__");
+
+            if (!newActivities[activityName].includes(studentId)) {
+              newActivities[activityName].push(studentId);
+            }
+          }
+        }
+      }
+
+      students = newStudents;
+      activities = newActivities;
+
+      await saveData();
+      showData();
+
+      alert(`업로드 완료\n학생 ${Object.keys(students).length}명\n활동 ${Object.keys(activities).length}개`);
+
+      fileInput.value = "";
+
+    } catch (err) {
+      console.error(err);
+      alert("엑셀 처리 중 오류 발생");
     }
-  }
+  };
 
-  students = newStudents;
-  activities = newActivities;
-
-  await saveData();
-  showData();
-
-  alert(
-    `업로드 완료\n학생 ${Object.keys(students).length}명\n활동 ${Object.keys(activities).length}개`
-  );
-
-  fileInput.value = "";
-
-} catch (err) {
-  console.error(err);
-  alert("엑셀 처리 중 오류 발생");
-}
-```
-
-};
-
-reader.readAsArrayBuffer(file);
+  reader.readAsArrayBuffer(file);
 };
 
     window.searchStudent = function () {
