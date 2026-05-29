@@ -43,22 +43,16 @@
       margin: 7px 0;
     }
 
-    .reset-grid {
-      display: flex;
-      gap: 40px;
-      align-items: flex-start;
-    }
-
-    .reset-column {
-      flex: 1;
-    }
-
+    .delete-grid,
+    .reset-grid,
     .data-grid {
       display: flex;
       gap: 40px;
       align-items: flex-start;
     }
 
+    .delete-column,
+    .reset-column,
     .data-column {
       flex: 1;
     }
@@ -111,13 +105,19 @@
     <button onclick="searchActivity()">활동 검색</button>
     <div id="activitySearchResult"></div>
 
-    <h3>학생 삭제</h3>
-    <input type="text" id="deleteStudentId" placeholder="삭제할 학번">
-    <button onclick="deleteStudent()">학생 삭제</button>
+    <div class="delete-grid">
+      <div class="delete-column">
+        <h3>학생 삭제</h3>
+        <input type="text" id="deleteStudentId" placeholder="삭제할 학번">
+        <button onclick="deleteStudent()">학생 삭제</button>
+      </div>
 
-    <h3>활동 삭제</h3>
-    <input type="text" id="deleteActivityName" placeholder="삭제할 활동">
-    <button onclick="deleteActivity()">활동 삭제</button>
+      <div class="delete-column">
+        <h3>활동 삭제</h3>
+        <input type="text" id="deleteActivityName" placeholder="삭제할 활동">
+        <button onclick="deleteActivity()">활동 삭제</button>
+      </div>
+    </div>
 
     <div class="reset-grid">
       <div class="reset-column">
