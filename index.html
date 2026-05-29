@@ -64,7 +64,9 @@
     <h3>학생 삭제</h3>
 <input type="text" id="deleteStudentId" placeholder="삭제할 학번">
 <button onclick="deleteStudent()">학생 삭제</button>
-
+    <h3>활동 삭제</h3>
+<input type="text" id="deleteActivity" placeholder="삭제할 활동">
+<button onclick="deleteActivity()">활동 삭제</button>
     <h3>현재 데이터</h3>
     <div id="dataView"></div>
   </div>
@@ -141,6 +143,31 @@
 
   alert("학생이 삭제되었습니다.");
   document.getElementById("deleteStudentId").value = "";
+};
+    window.deleteActivity = async function () {
+  const activity = document.getElementById("deleteActivityName").value.trim();
+
+  if (activity === "") {
+    alert("삭제할 활동 이름을 입력하세요.");
+    return;
+  }
+
+  if (!activities[activity]) {
+    alert("존재하지 않는 활동입니다.");
+    return;
+  }
+
+  if (!confirm(`"${activity}" 활동을 삭제할까요?`)) {
+    return;
+  }
+
+  delete activities[activity];
+
+  await saveData();
+  showData();
+
+  alert("활동이 삭제되었습니다.");
+  document.getElementById("deleteActivityName").value = "";
 };
 
     window.searchStudent = function () {
