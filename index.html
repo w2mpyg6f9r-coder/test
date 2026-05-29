@@ -112,7 +112,14 @@ th, td {
     </select>
     <input type="text" id="activityStudentId" placeholder="학생 학번">
     <button onclick="addStudentToActivity()">신청 추가</button>
-
+    
+<h3>활동에서 학생 삭제</h3>
+<select id="removeActivityInput">
+  <option value="">활동 선택</option>
+</select>
+<input type="text" id="removeActivityStudentId" placeholder="학생 학번">
+<button onclick="removeStudentFromActivity()">신청 삭제</button>
+    
     <h3>활동별 학생 검색</h3>
     <select id="searchActivityName">
       <option value="">활동 선택</option>
@@ -441,6 +448,45 @@ window.uploadExcel = async function () {
       document.getElementById("activityStudentId").value = "";
     };
 
+    window.removeStudentFromActivity = async function () {
+  const activity = document.getElementById("removeActivityInput").value.trim();
+  const id = document.getElementById("removeActivityStudentId").value.trim();
+
+  if (activity === "") {
+    alert("활동을 선택하세요.");
+    return;
+  }
+
+  if (id === "") {
+    alert("삭제할 학생 학번을 입력하세요.");
+    return;
+  }
+
+  if (!activities[activity]) {
+    alert("존재하지 않는 활동입니다.");
+    return;
+  }
+
+  if (!activities[activity].includes(id)) {
+    alert("이 활동에 등록되지 않은 학생입니다.");
+    return;
+  }
+
+  activities[activity] = activities[activity].filter(studentId => studentId !== id);
+
+  if (activities[activity].length === 0) {
+    activities[activity] = ["__EMPTY__"];
+  }
+
+  await saveData();
+  showData();
+
+  alert("활동에서 학생이 삭제되었습니다.");
+
+  document.getElementById("removeActivityInput").value = "";
+  document.getElementById("removeActivityStudentId").value = "";
+};
+    
     window.searchActivity = function () {
       const activity = document.getElementById("searchActivityName").value.trim();
       const resultDiv = document.getElementById("activitySearchResult");
@@ -613,16 +659,19 @@ function showData() {
 
     function updateActivitySelects() {
       const activityInput = document.getElementById("activityInput");
+      const removeActivityInput = document.getElementById("removeActivityInput");
       const searchActivityName = document.getElementById("searchActivityName");
 
-      if (!activityInput || !searchActivityName) return;
+      if (!activityInput || !removeActivityInput || !searchActivityName) return;
 
       activityInput.innerHTML = '<option value="">활동 선택</option>';
-      searchActivityName.innerHTML = '<option value="">활동 선택</option>';
-
+removeActivityInput.innerHTML = '<option value="">활동 선택</option>';
+searchActivityName.innerHTML = '<option value="">활동 선택</option>';
+      
       for (let activity in activities) {
         activityInput.innerHTML += `<option value="${activity}">${activity}</option>`;
-        searchActivityName.innerHTML += `<option value="${activity}">${activity}</option>`;
+removeActivityInput.innerHTML += `<option value="${activity}">${activity}</option>`;
+searchActivityName.innerHTML += `<option value="${activity}">${activity}</option>`;
       }
     }
 function enterKey(inputId, actionFunction) {
