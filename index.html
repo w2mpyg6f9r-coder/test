@@ -10,21 +10,35 @@
       margin: 40px auto;
       padding: 20px;
     }
-    h1, h2 { text-align: center; }
+
+    h1, h2 {
+      text-align: center;
+    }
+
     .box {
       border: 1px solid #ddd;
       border-radius: 10px;
       padding: 20px;
       margin-top: 20px;
     }
+
     input, button {
       padding: 10px;
       margin: 5px;
       font-size: 15px;
     }
-    button { cursor: pointer; }
-    .hidden { display: none; }
-    li { margin: 7px 0; }
+
+    button {
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    li {
+      margin: 7px 0;
+    }
   </style>
 </head>
 <body>
@@ -46,7 +60,7 @@
 
   <div id="adminPage" class="box hidden">
     <h2>관리자 화면</h2>
-    
+
     <h3>학생 추가</h3>
     <input type="text" id="studentId" placeholder="학번">
     <input type="text" id="studentName" placeholder="이름">
@@ -60,31 +74,38 @@
     <input type="text" id="activityInput" placeholder="활동 이름">
     <input type="text" id="activityStudentId" placeholder="학생 학번">
     <button onclick="addStudentToActivity()">신청 추가</button>
-    
+
+    <h3>활동별 학생 검색</h3>
+    <input type="text" id="searchActivityName" placeholder="검색할 활동 이름">
+    <button onclick="searchActivity()">활동 검색</button>
+    <div id="activitySearchResult"></div>
+
     <h3>학생 삭제</h3>
-<input type="text" id="deleteStudentId" placeholder="삭제할 학번">
-<button onclick="deleteStudent()">학생 삭제</button>
+    <input type="text" id="deleteStudentId" placeholder="삭제할 학번">
+    <button onclick="deleteStudent()">학생 삭제</button>
+
     <h3>활동 삭제</h3>
-<input type="text" id="deleteActivity" placeholder="삭제할 활동">
-<button onclick="deleteActivity()">활동 삭제</button>
+    <input type="text" id="deleteActivityName" placeholder="삭제할 활동">
+    <button onclick="deleteActivity()">활동 삭제</button>
+
     <h3>현재 데이터</h3>
     <div id="dataView"></div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
-    apiKey: "AIzaSyBPDjTDGJnnYooEFynHEXR8uI-V-xa-Bcs",
-    authDomain: "project-7536310801310810250.firebaseapp.com",
-    databaseURL: "https://project-7536310801310810250-default-rtdb.firebaseio.com",
-    projectId: "project-7536310801310810250",
-    storageBucket: "project-7536310801310810250.firebasestorage.app",
-    messagingSenderId: "178145722215",
-    appId: "1:178145722215:web:eda1e0b8cbc47bfcb379c2",
-    measurementId: "G-3SQFB6YNJZ"
-  };
+      apiKey: "AIzaSyBPDjTDGJnnYooEFynHEXR8uI-V-xa-Bcs",
+      authDomain: "project-7536310801310810250.firebaseapp.com",
+      databaseURL: "https://project-7536310801310810250-default-rtdb.firebaseio.com",
+      projectId: "project-7536310801310810250",
+      storageBucket: "project-7536310801310810250.firebasestorage.app",
+      messagingSenderId: "178145722215",
+      appId: "1:178145722215:web:eda1e0b8cbc47bfcb379c2",
+      measurementId: "G-3SQFB6YNJZ"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
@@ -102,11 +123,8 @@
         students = data.students || {};
         activities = data.activities || {};
       } else {
-        alert("x");
-        const data = snapshot.val();
-        students = data.students || {};
-        activities = data.activities || {};
-
+        students = {};
+        activities = {};
         await saveData();
       }
 
@@ -119,51 +137,6 @@
         activities: activities
       });
     }
-    window.deleteStudent = async function () {
-  const id = document.getElementById("deleteStudentId").value.trim();
-
-  if (!students[id]) {
-    alert("존재하지 않는 학번입니다.");
-    return;
-  }
-
-  delete students[id];
-
-  for (let activity in activities) {
-    activities[activity] = activities[activity].filter(studentId => studentId !== id);
-  }
-
-  await saveData();
-  showData();
-
-  alert("학생이 삭제되었습니다.");
-  document.getElementById("deleteStudentId").value = "";
-};
-    window.deleteActivity = async function () {
-  const activity = document.getElementById("deleteActivityName").value.trim();
-
-  if (activity === "") {
-    alert("삭제할 활동 이름을 입력하세요.");
-    return;
-  }
-
-  if (!activities[activity]) {
-    alert("존재하지 않는 활동입니다.");
-    return;
-  }
-
-  if (!confirm(`"${activity}" 활동을 삭제할까요?`)) {
-    return;
-  }
-
-  delete activities[activity];
-
-  await saveData();
-  showData();
-
-  alert("활동이 삭제되었습니다.");
-  document.getElementById("deleteActivityName").value = "";
-};
 
     window.searchStudent = function () {
       const id = document.getElementById("searchId").value.trim();
@@ -220,6 +193,7 @@
       }
 
       students[id] = name;
+
       await saveData();
       showData();
 
@@ -228,64 +202,158 @@
     };
 
     window.addActivity = async function () {
-  const activity = document.getElementById("activityName").value.trim();
+      const activity = document.getElementById("activityName").value.trim();
 
-  if (activity === "") {
-    alert("활동 이름을 입력하세요.");
-    return;
-  }
+      if (activity === "") {
+        alert("활동 이름을 입력하세요.");
+        return;
+      }
 
-  if (!activities[activity]) {
-    activities[activity] = ["__EMPTY__"];
-  }
+      if (!activities[activity]) {
+        activities[activity] = ["__EMPTY__"];
+      }
 
-  await saveData();
-  showData();
+      await saveData();
+      showData();
 
-  document.getElementById("activityName").value = "";
-};
+      document.getElementById("activityName").value = "";
+    };
 
     window.addStudentToActivity = async function () {
-  const activity = document.getElementById("activityInput").value.trim();
-  const id = document.getElementById("activityStudentId").value.trim();
+      const activity = document.getElementById("activityInput").value.trim();
+      const id = document.getElementById("activityStudentId").value.trim();
 
-  if (!students[id]) {
-    alert("등록되지 않은 학번입니다.");
-    return;
-  }
+      if (!students[id]) {
+        alert("등록되지 않은 학번입니다.");
+        return;
+      }
 
-  if (!activities[activity]) {
-    alert("등록되지 않은 활동입니다.");
-    return;
-  }
+      if (!activities[activity]) {
+        alert("등록되지 않은 활동입니다.");
+        return;
+      }
 
-  activities[activity] = activities[activity].filter(x => x !== "__EMPTY__");
+      activities[activity] = activities[activity].filter(x => x !== "__EMPTY__");
 
-  if (!activities[activity].includes(id)) {
-    activities[activity].push(id);
-  }
+      if (!activities[activity].includes(id)) {
+        activities[activity].push(id);
+      }
 
-  await saveData();
-  showData();
+      await saveData();
+      showData();
 
-  document.getElementById("activityInput").value = "";
-  document.getElementById("activityStudentId").value = "";
-};
+      document.getElementById("activityInput").value = "";
+      document.getElementById("activityStudentId").value = "";
+    };
+
+    window.searchActivity = function () {
+      const activity = document.getElementById("searchActivityName").value.trim();
+      const resultDiv = document.getElementById("activitySearchResult");
+
+      if (activity === "") {
+        resultDiv.innerHTML = "<p>활동 이름을 입력하세요.</p>";
+        return;
+      }
+
+      if (!activities[activity]) {
+        resultDiv.innerHTML = "<p>존재하지 않는 활동입니다.</p>";
+        return;
+      }
+
+      const studentIds = activities[activity].filter(id => id !== "__EMPTY__");
+
+      let html = `<h4>${activity} 신청 학생</h4>`;
+
+      if (studentIds.length === 0) {
+        html += "<p>신청한 학생이 없습니다.</p>";
+      } else {
+        html += "<ul>";
+
+        studentIds.forEach(id => {
+          const name = students[id] || "이름 없음";
+          html += `<li>${id} - ${name}</li>`;
+        });
+
+        html += "</ul>";
+      }
+
+      resultDiv.innerHTML = html;
+    };
+
+    window.deleteStudent = async function () {
+      const id = document.getElementById("deleteStudentId").value.trim();
+
+      if (!students[id]) {
+        alert("존재하지 않는 학번입니다.");
+        return;
+      }
+
+      if (!confirm(`${id} - ${students[id]} 학생을 삭제할까요?`)) {
+        return;
+      }
+
+      delete students[id];
+
+      for (let activity in activities) {
+        activities[activity] = activities[activity].filter(studentId => studentId !== id);
+
+        if (activities[activity].length === 0) {
+          activities[activity] = ["__EMPTY__"];
+        }
+      }
+
+      await saveData();
+      showData();
+
+      alert("학생이 삭제되었습니다.");
+      document.getElementById("deleteStudentId").value = "";
+    };
+
+    window.deleteActivity = async function () {
+      const activity = document.getElementById("deleteActivityName").value.trim();
+
+      if (activity === "") {
+        alert("삭제할 활동 이름을 입력하세요.");
+        return;
+      }
+
+      if (!activities[activity]) {
+        alert("존재하지 않는 활동입니다.");
+        return;
+      }
+
+      if (!confirm(`"${activity}" 활동을 삭제할까요?`)) {
+        return;
+      }
+
+      delete activities[activity];
+
+      await saveData();
+      showData();
+
+      alert("활동이 삭제되었습니다.");
+      document.getElementById("deleteActivityName").value = "";
+    };
+
     function showData() {
       const dataView = document.getElementById("dataView");
       if (!dataView) return;
 
       let html = "<h4>학생 목록</h4><ul>";
+
       for (let id in students) {
         html += `<li>${id} - ${students[id]}</li>`;
       }
+
       html += "</ul>";
 
       html += "<h4>활동 목록</h4><ul>";
+
       for (let activity in activities) {
-  const ids = activities[activity].filter(id => id !== "__EMPTY__");
-  html += `<li>${activity}: ${ids.length > 0 ? ids.join(", ") : "신청자 없음"}</li>`;
-}
+        const ids = activities[activity].filter(id => id !== "__EMPTY__");
+        html += `<li>${activity}: ${ids.length > 0 ? ids.join(", ") : "신청자 없음"}</li>`;
+      }
+
       html += "</ul>";
 
       dataView.innerHTML = html;
