@@ -191,7 +191,12 @@ window.uploadExcel = async function () {
   }
 
   const reader = new FileReader();
-
+  function cleanActivityName(name) {
+    return String(name)
+      .trim()
+      .replace(/[.#$/\[\]]/g, " ")
+      .replace(/\s+/g, " ");
+  }
   reader.onload = async function (e) {
     try {
       if (!window.XLSX) {
@@ -248,7 +253,7 @@ window.uploadExcel = async function () {
       let newActivities = {};
 
       for (let c = nameCol + 1; c < headerRow.length; c++) {
-        const activityName = String(headerRow[c]).trim();
+        const activityName = cleanActivityName(headerRow[c]);
 
         if (activityName !== "") {
           newActivities[activityName] = ["__EMPTY__"];
@@ -276,7 +281,8 @@ window.uploadExcel = async function () {
         newStudents[studentId] = studentName;
 
         for (let c = nameCol + 1; c < headerRow.length; c++) {
-          const activityName = String(headerRow[c]).trim();
+          const activityName = cleanActivityName(headerRow[c]);
+
           const cellValue = String(row[c]).trim();
 
           if (activityName === "") continue;
