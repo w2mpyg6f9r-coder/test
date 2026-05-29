@@ -22,7 +22,7 @@
       margin-top: 20px;
     }
 
-    input, button {
+    input, button, select {
       padding: 10px;
       margin: 5px;
       font-size: 15px;
@@ -74,11 +74,12 @@
     <input type="text" id="activityInput" placeholder="활동 이름">
     <input type="text" id="activityStudentId" placeholder="학생 학번">
     <button onclick="addStudentToActivity()">신청 추가</button>
-
-    <h3>활동별 학생 검색</h3>
-    <input type="text" id="searchActivityName" placeholder="검색할 활동 이름">
-    <button onclick="searchActivity()">활동 검색</button>
-    <div id="activitySearchResult"></div>
+<h3>활동별 학생 검색</h3>
+<select id="searchActivityName">
+  <option value="">활동 선택</option>
+</select>
+<button onclick="searchActivity()">활동 검색</button>
+<div id="activitySearchResult"></div>
 
     <h3>학생 삭제</h3>
     <input type="text" id="deleteStudentId" placeholder="삭제할 학번">
@@ -357,7 +358,22 @@
       html += "</ul>";
 
       dataView.innerHTML = html;
+      updateActivitySelects();
     }
+    function updateActivitySelects() {
+  const activityInput = document.getElementById("activityInput");
+  const searchActivityName = document.getElementById("searchActivityName");
+
+  if (!activityInput || !searchActivityName) return;
+
+  activityInput.innerHTML = '<option value="">활동 선택</option>';
+  searchActivityName.innerHTML = '<option value="">활동 선택</option>';
+
+  for (let activity in activities) {
+    activityInput.innerHTML += `<option value="${activity}">${activity}</option>`;
+    searchActivityName.innerHTML += `<option value="${activity}">${activity}</option>`;
+  }
+}
 
     loadData();
   </script>
