@@ -103,8 +103,10 @@
         activities = data.activities || {};
       } else {
         alert("x");
-        students = {};
-        activities = {};
+        const data = snapshot.val();
+        students = data.students || {};
+        activities = data.activities || {};
+
         await saveData();
       }
 
