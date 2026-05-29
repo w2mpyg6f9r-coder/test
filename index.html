@@ -69,11 +69,12 @@
     <h3>활동 추가</h3>
     <input type="text" id="activityName" placeholder="활동 이름">
     <button onclick="addActivity()">활동 추가</button>
-
-    <h3>활동에 학생 추가</h3>
-    <input type="text" id="activityInput" placeholder="활동 이름">
-    <input type="text" id="activityStudentId" placeholder="학생 학번">
-    <button onclick="addStudentToActivity()">신청 추가</button>
+<h3>활동에 학생 추가</h3>
+<select id="activityInput">
+  <option value="">활동 선택</option>
+</select>
+<input type="text" id="activityStudentId" placeholder="학생 학번">
+<button onclick="addStudentToActivity()">신청 추가</button>
 <h3>활동별 학생 검색</h3>
 <select id="searchActivityName">
   <option value="">활동 선택</option>
@@ -360,6 +361,17 @@
       dataView.innerHTML = html;
       updateActivitySelects();
     }
+    function updateActivitySelect() {
+  const activityInput = document.getElementById("activityInput");
+
+  if (!activityInput) return;
+
+  activityInput.innerHTML = '<option value="">활동 선택</option>';
+
+  for (let activity in activities) {
+    activityInput.innerHTML += `<option value="${activity}">${activity}</option>`;
+  }
+}
     function updateActivitySelects() {
   const activityInput = document.getElementById("activityInput");
   const searchActivityName = document.getElementById("searchActivityName");
