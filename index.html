@@ -46,7 +46,7 @@
 
   <div id="adminPage" class="box hidden">
     <h2>관리자 화면</h2>
-
+    
     <h3>학생 추가</h3>
     <input type="text" id="studentId" placeholder="학번">
     <input type="text" id="studentName" placeholder="이름">
@@ -60,6 +60,10 @@
     <input type="text" id="activityInput" placeholder="활동 이름">
     <input type="text" id="activityStudentId" placeholder="학생 학번">
     <button onclick="addStudentToActivity()">신청 추가</button>
+    
+    <h3>학생 삭제</h3>
+<input type="text" id="deleteStudentId" placeholder="삭제할 학번">
+<button onclick="deleteStudent()">학생 삭제</button>
 
     <h3>현재 데이터</h3>
     <div id="dataView"></div>
@@ -118,6 +122,22 @@
         activities: activities
       });
     }
+    async function removeStudentFromActivity() {
+  const activity = document.getElementById("removeActivity").value.trim();
+  const id = document.getElementById("removeStudentId").value.trim();
+
+  if (!activities[activity]) {
+    alert("활동이 존재하지 않습니다.");
+    return;
+  }
+
+  activities[activity] = activities[activity].filter(
+    studentId => studentId !== id
+  );
+
+  await saveData();
+  showData();
+}
 
     window.searchStudent = function () {
       const id = document.getElementById("searchId").value.trim();
