@@ -42,6 +42,26 @@
     li {
       margin: 7px 0;
     }
+
+    .reset-grid {
+      display: flex;
+      gap: 40px;
+      align-items: flex-start;
+    }
+
+    .reset-column {
+      flex: 1;
+    }
+
+    .data-grid {
+      display: flex;
+      gap: 40px;
+      align-items: flex-start;
+    }
+
+    .data-column {
+      flex: 1;
+    }
   </style>
 </head>
 <body>
@@ -99,11 +119,17 @@
     <input type="text" id="deleteActivityName" placeholder="삭제할 활동">
     <button onclick="deleteActivity()">활동 삭제</button>
 
-    <h3>학생 데이터 초기화</h3>
-    <button onclick="resetStudents()">학생 전체 삭제</button>
+    <div class="reset-grid">
+      <div class="reset-column">
+        <h3>학생 데이터 초기화</h3>
+        <button onclick="resetStudents()">학생 전체 삭제</button>
+      </div>
 
-    <h3>활동 데이터 초기화</h3>
-    <button onclick="resetActivities()">활동 전체 삭제</button>
+      <div class="reset-column">
+        <h3>활동 데이터 초기화</h3>
+        <button onclick="resetActivities()">활동 전체 삭제</button>
+      </div>
+    </div>
 
     <h3>현재 데이터</h3>
     <div id="dataView"></div>
@@ -390,7 +416,7 @@
 
       const studentIds = activities[activity].filter(id => id !== "__EMPTY__");
 
-      let html = `<h4>${activity} 신청 학생</h4>`;
+      let html = `<h4>${activity} 신청 학생 (총 ${studentIds.length}명)</h4>`;
 
       if (studentIds.length === 0) {
         html += "<p>신청한 학생이 없습니다.</p>";
@@ -495,22 +521,36 @@
       const dataView = document.getElementById("dataView");
       if (!dataView) return;
 
-      let html = "<h4>학생 목록</h4><ul>";
+      let html = `
+        <div class="data-grid">
+          <div class="data-column">
+            <h4>학생 목록</h4>
+            <ul>
+      `;
 
       for (let id in students) {
         html += `<li>${id} - ${students[id]}</li>`;
       }
 
-      html += "</ul>";
+      html += `
+            </ul>
+          </div>
 
-      html += "<h4>활동 목록</h4><ul>";
+          <div class="data-column">
+            <h4>활동 목록</h4>
+            <ul>
+      `;
 
       for (let activity in activities) {
         const ids = activities[activity].filter(id => id !== "__EMPTY__");
         html += `<li>${activity}: ${ids.length > 0 ? ids.join(", ") : "신청자 없음"}</li>`;
       }
 
-      html += "</ul>";
+      html += `
+            </ul>
+          </div>
+        </div>
+      `;
 
       dataView.innerHTML = html;
       updateActivitySelects();
