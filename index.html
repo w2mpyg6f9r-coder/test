@@ -228,48 +228,49 @@
     };
 
     window.addActivity = async function () {
-      const activity = document.getElementById("activityName").value.trim();
+  const activity = document.getElementById("activityName").value.trim();
 
-      if (activity === "") {
-        alert("활동 이름을 입력하세요.");
-        return;
-      }
+  if (activity === "") {
+    alert("활동 이름을 입력하세요.");
+    return;
+  }
 
-      if (!activities[activity]) {
-        activities[activity] = [];
-      }
+  if (!activities[activity]) {
+    activities[activity] = ["__EMPTY__"];
+  }
 
-      await saveData();
-      showData();
+  await saveData();
+  showData();
 
-      document.getElementById("activityName").value = "";
-    };
+  document.getElementById("activityName").value = "";
+};
 
     window.addStudentToActivity = async function () {
-      const activity = document.getElementById("activityInput").value.trim();
-      const id = document.getElementById("activityStudentId").value.trim();
+  const activity = document.getElementById("activityInput").value.trim();
+  const id = document.getElementById("activityStudentId").value.trim();
 
-      if (!students[id]) {
-        alert("등록되지 않은 학번입니다.");
-        return;
-      }
+  if (!students[id]) {
+    alert("등록되지 않은 학번입니다.");
+    return;
+  }
 
-      if (!activities[activity]) {
-        alert("등록되지 않은 활동입니다.");
-        return;
-      }
+  if (!activities[activity]) {
+    alert("등록되지 않은 활동입니다.");
+    return;
+  }
 
-      if (!activities[activity].includes(id)) {
-        activities[activity].push(id);
-      }
+  activities[activity] = activities[activity].filter(x => x !== "__EMPTY__");
 
-      await saveData();
-      showData();
+  if (!activities[activity].includes(id)) {
+    activities[activity].push(id);
+  }
 
-      document.getElementById("activityInput").value = "";
-      document.getElementById("activityStudentId").value = "";
-    };
+  await saveData();
+  showData();
 
+  document.getElementById("activityInput").value = "";
+  document.getElementById("activityStudentId").value = "";
+};
     function showData() {
       const dataView = document.getElementById("dataView");
       if (!dataView) return;
@@ -282,8 +283,9 @@
 
       html += "<h4>활동 목록</h4><ul>";
       for (let activity in activities) {
-        html += `<li>${activity}: ${activities[activity].join(", ")}</li>`;
-      }
+  const ids = activities[activity].filter(id => id !== "__EMPTY__");
+  html += `<li>${activity}: ${ids.length > 0 ? ids.join(", ") : "신청자 없음"}</li>`;
+}
       html += "</ul>";
 
       dataView.innerHTML = html;
