@@ -122,22 +122,26 @@
         activities: activities
       });
     }
-    async function removeStudentFromActivity() {
-  const activity = document.getElementById("removeActivity").value.trim();
-  const id = document.getElementById("removeStudentId").value.trim();
+    window.deleteStudent = async function () {
+  const id = document.getElementById("deleteStudentId").value.trim();
 
-  if (!activities[activity]) {
-    alert("활동이 존재하지 않습니다.");
+  if (!students[id]) {
+    alert("존재하지 않는 학번입니다.");
     return;
   }
 
-  activities[activity] = activities[activity].filter(
-    studentId => studentId !== id
-  );
+  delete students[id];
+
+  for (let activity in activities) {
+    activities[activity] = activities[activity].filter(studentId => studentId !== id);
+  }
 
   await saveData();
   showData();
-}
+
+  alert("학생이 삭제되었습니다.");
+  document.getElementById("deleteStudentId").value = "";
+};
 
     window.searchStudent = function () {
       const id = document.getElementById("searchId").value.trim();
