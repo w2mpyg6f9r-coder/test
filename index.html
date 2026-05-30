@@ -38,6 +38,16 @@
     .hidden {
       display: none;
     }
+	  
+#versionView {
+  position: fixed;
+  top: 6px;
+  left: 8px;
+  font-size: 11px;
+  color: #999;
+  z-index: 9999;
+}
+	
 
 details {
   border: 1px solid #ddd;
@@ -87,7 +97,8 @@ th, td {
   </style>
 </head>
 <body>
-
+<div id="versionView">v0</div>
+	
   <h1>학생 활동 조회 사이트</h1>
 
   <div class="box">
@@ -225,6 +236,7 @@ th, td {
     
     let students = {};
     let activities = {};
+	let dataVersion = 0;
 
     async function loadData() {
       const snapshot = await get(ref(db, "/"));
@@ -233,6 +245,8 @@ th, td {
         const data = snapshot.val();
         students = data.students || {};
         activities = data.activities || {};
+		dataVersion = data.dataVersion || 0;
+		showVersion();
       } else {
         students = {};
         activities = {};
@@ -271,16 +285,26 @@ async function saveData(recordUndo = true) {
     redoStack = [];
     saveHistoryToBrowser();
   }
-
+	
+	dataVersion++;
+	
+	await set(ref(db, "dataVersion"), dataVersion);
   await set(ref(db, "students"), students);
   await set(ref(db, "activities"), activities);
-
+	showVersion();
+	
   lastSavedState = cloneData({
     students: students,
     activities: activities
   });
 }
 
+ function showVersion() {
+  const view = document.getElementById("versionView");
+  if (!view) return;
+
+  view.innerHTML = `v${dataVersion}`;
+}
 
 function safeActivityName(name) {
   return String(name)
