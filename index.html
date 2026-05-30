@@ -391,13 +391,12 @@ for (let activity in newActivities) {
 
       result.innerHTML = html;
     };
-
 window.loginAdmin = async function () {
-  const pw = document.getElementById("adminPw").value;
+  const pw = document.getElementById("adminPw").value.trim();
 
   try {
     const snapshot = await get(ref(db, "adminPassword"));
-    const realPassword = snapshot.val();
+    const realPassword = String(snapshot.val()).trim();
 
     if (pw === realPassword) {
       document.getElementById("adminPage").classList.remove("hidden");
