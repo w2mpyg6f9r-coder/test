@@ -180,9 +180,8 @@ th, td {
     <summary>4. 전체 데이터 관리</summary>
 
     <h3>되돌리기 관리</h3>
-		<button onclick="undoLastChange()">한 단계 뒤로가기</button>
-		<button onclick="redoLastChange()">되돌린 작업 다시 적용</button>
-		<div id="undoStatus"></div>
+	<button onclick="undoLastChange()">← 뒤로가기</button>
+	<button onclick="redoLastChange()">되돌리기 →</button>
 
     <div class="reset-grid">
       <div class="reset-column">
@@ -255,10 +254,21 @@ function cloneData(data) {
   return JSON.parse(JSON.stringify(data));
 }
 
+function saveHistoryToBrowser() {
+  localStorage.setItem("undoStack", JSON.stringify(undoStack));
+  localStorage.setItem("redoStack", JSON.stringify(redoStack));
+}
+
+function loadHistoryFromBrowser() {
+  undoStack = JSON.parse(localStorage.getItem("undoStack") || "[]");
+  redoStack = JSON.parse(localStorage.getItem("redoStack") || "[]");
+}
+	  
 async function saveData(recordUndo = true) {
   if (recordUndo && lastSavedState) {
     undoStack.push(cloneData(lastSavedState));
     redoStack = [];
+    saveHistoryToBrowser();
   }
 
   await set(ref(db, "students"), students);
@@ -268,7 +278,10 @@ async function saveData(recordUndo = true) {
     students: students,
     activities: activities
   });
+}
 
+loadHistoryFromBrowser();
+	
   updateUndoStatus();
 }
 
@@ -726,7 +739,7 @@ window.loginAdmin = async function () {
 
 window.undoLastChange = async function () {
   if (undoStack.length === 0) {
-    alert("되돌릴 작업이 없습니다.");
+    alert("뒤로갈 수 있는 이전 작업이 없습니다.");
     return;
   }
 
@@ -748,10 +761,10 @@ window.undoLastChange = async function () {
     activities: activities
   });
 
+  saveHistoryToBrowser();
   showData();
-  updateUndoStatus();
 
-  alert("한 단계 뒤로 갔습니다.");
+  alert("이전 작업으로 돌아갔습니다.");
 };
 
 
@@ -771,13 +784,19 @@ window.redoLastChange = async function () {
   students = next.students || {};
   activities = next.activities || {};
 
-await set(ref(db, "students"), students);
-await set(ref(db, "activities"), activities);
+  await set(ref(db, "students"), students);
+  await set(ref(db, "activities"), activities);
 
   lastSavedState = cloneData({
     students: students,
     activities: activities
   });
+
+  saveHistoryToBrowser();
+  showData();
+
+  alert("되돌린 작업을 다시 적용했습니다.");
+};
 
   showData();
   updateUndoStatus();
@@ -786,8 +805,7 @@ await set(ref(db, "activities"), activities);
 };
 
 function updateUndoStatus() {
-  const undoStatus = document.getElementById("undoStatus");
-  if (!undoStatus) return;
+}
 
   undoStatus.innerHTML = `
     <p>뒤로가기 가능 작업: ${undoStack.length}개</p>
