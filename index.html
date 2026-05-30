@@ -94,7 +94,7 @@ th, td {
     <h2>관리자 화면</h2>
 
     <h3>엑셀 업로드</h3>
-		<input type="file" id="excelFile" accept=".xlsx,.xls">2버ㄴ
+		<input type="file" id="excelFile" accept=".xlsx,.xls">
 		<button onclick="uploadExcel()">엑셀 미리보기</button>
 		<div id="excelPreview"></div>
 
@@ -212,19 +212,13 @@ function cloneData(data) {
   return JSON.parse(JSON.stringify(data));
 }
 
-async function saveData() {
+async function saveData(recordUndo = true) {
+  if (recordUndo && lastSavedState) {
+    undoStack.push(cloneData(lastSavedState));
+  }
+
   const passwordSnapshot = await get(ref(db, "adminPassword"));
   const currentPassword = passwordSnapshot.val() || "1234";
-
-  await set(ref(db, "/"), {
-    students: students,
-    activities: activities,
-    adminPassword: currentPassword
-  });
-}
-
-  const passwordSnapshot = await get(ref(db, "adminPassword"));
-  const currentPassword = passwordSnapshot.val() || "";
 
   await set(ref(db, "/"), {
     students: students,
@@ -239,6 +233,7 @@ async function saveData() {
 
   updateUndoStatus();
 }
+
 function safeActivityName(name) {
   return String(name)
     .trim()
