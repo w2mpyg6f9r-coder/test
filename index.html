@@ -179,9 +179,10 @@ th, td {
   <details>
     <summary>4. 전체 데이터 관리</summary>
 
-    <h3>한 단계 뒤로가기</h3>
-    <button onclick="undoLastChange()">한 단계 뒤로가기</button>
-    <div id="undoStatus"></div>
+    <h3>되돌리기 관리</h3>
+		<button onclick="undoLastChange()">한 단계 뒤로가기</button>
+		<button onclick="redoLastChange()">되돌린 작업 다시 적용</button>
+		<div id="undoStatus"></div>
 
     <div class="reset-grid">
       <div class="reset-column">
@@ -246,8 +247,9 @@ th, td {
       showData();
     }
 
-   let undoStack = [];
-let lastSavedState = null;
+    let undoStack = [];
+		let redoStack = [];
+    let lastSavedState = null;
 
 function cloneData(data) {
   return JSON.parse(JSON.stringify(data));
@@ -257,6 +259,9 @@ async function saveData(recordUndo = true) {
   if (recordUndo && lastSavedState) {
     undoStack.push(cloneData(lastSavedState));
   }
+  if (recordUndo) {
+  redoStack = [];
+}
 
   const passwordSnapshot = await get(ref(db, "adminPassword"));
   const currentPassword = passwordSnapshot.val() || "1234";
@@ -733,13 +738,18 @@ window.undoLastChange = async function () {
     return;
   }
 
+  redoStack.push(cloneData({
+    students: students,
+    activities: activities
+  }));
+
   const previous = undoStack.pop();
 
   students = previous.students || {};
   activities = previous.activities || {};
 
   const passwordSnapshot = await get(ref(db, "adminPassword"));
-  const currentPassword = passwordSnapshot.val() || "";
+  const currentPassword = passwordSnapshot.val() || "1234";
 
   await set(ref(db, "/"), {
     students: students,
@@ -755,14 +765,64 @@ window.undoLastChange = async function () {
   showData();
   updateUndoStatus();
 
+  alert("한 단계 뒤로 갔습니다.");
+};
+
+  lastSavedState = cloneData({
+    students: students,
+    activities: activities
+  });
+
+  showData();
+  updateUndoStatus();
+
   alert("한 단계 되돌렸습니다.");
+};
+
+window.redoLastChange = async function () {
+  if (redoStack.length === 0) {
+    alert("다시 적용할 작업이 없습니다.");
+    return;
+  }
+
+  undoStack.push(cloneData({
+    students: students,
+    activities: activities
+  }));
+
+  const next = redoStack.pop();
+
+  students = next.students || {};
+  activities = next.activities || {};
+
+  const passwordSnapshot = await get(ref(db, "adminPassword"));
+  const currentPassword = passwordSnapshot.val() || "1234";
+
+  await set(ref(db, "/"), {
+    students: students,
+    activities: activities,
+    adminPassword: currentPassword
+  });
+
+  lastSavedState = cloneData({
+    students: students,
+    activities: activities
+  });
+
+  showData();
+  updateUndoStatus();
+
+  alert("되돌린 작업을 다시 적용했습니다.");
 };
 
 function updateUndoStatus() {
   const undoStatus = document.getElementById("undoStatus");
   if (!undoStatus) return;
 
-  undoStatus.innerHTML = `<p>되돌릴 수 있는 작업: ${undoStack.length}개</p>`;
+  undoStatus.innerHTML = `
+    <p>뒤로가기 가능 작업: ${undoStack.length}개</p>
+    <p>다시 적용 가능 작업: ${redoStack.length}개</p>
+  `;
 }
 
 window.downloadBackupExcel = function () {
