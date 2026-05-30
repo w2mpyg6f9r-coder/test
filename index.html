@@ -94,8 +94,9 @@ th, td {
     <h2>관리자 화면</h2>
 
     <h3>엑셀 업로드</h3>
-    <input type="file" id="excelFile" accept=".xlsx,.xls">
-    <button onclick="uploadExcel()">엑셀 데이터 불러오기</button>
+		<input type="file" id="excelFile" accept=".xlsx,.xls">2버ㄴ
+		<button onclick="uploadExcel()">엑셀 미리보기</button>
+		<div id="excelPreview"></div>
 
     <h3>학생 추가</h3>
     <input type="text" id="studentId" placeholder="학번">
@@ -153,6 +154,11 @@ th, td {
       </div>
     </div>
 
+		<h3>관리 도구</h3>
+		<button onclick="undoLastChange()">한 단계 뒤로가기</button>
+		<button onclick="downloadBackupExcel()">현재 데이터 엑셀 다운로드</button>
+		<div id="undoStatus"></div>
+
     <h3>현재 데이터</h3>
     <div id="dataView"></div>
   </div>
@@ -191,19 +197,59 @@ th, td {
         activities = {};
         await saveData();
       }
+      lastSavedState = cloneData({
+        students: students,
+        activities: activities
+      });
 
       showData();
     }
 
-    async function saveData() {
-      await set(ref(db, "/"), {
-        students: students,
-        activities: activities
-      });
-    }
+   let undoStack = [];
+let lastSavedState = null;
+
+function cloneData(data) {
+  return JSON.parse(JSON.stringify(data));
+}
+
+async function saveData(recordUndo = true) {
+  if (recordUndo && lastSavedState) {
+    undoStack.push(cloneData(lastSavedState));
+  }
+
+  const passwordSnapshot = await get(ref(db, "adminPassword"));
+  const currentPassword = passwordSnapshot.val() || "";
+
+  await set(ref(db, "/"), {
+    students: students,
+    activities: activities,
+    adminPassword: currentPassword
+  });
+
+  lastSavedState = cloneData({
+    students: students,
+    activities: activities
+  });
+
+  updateUndoStatus();
+}
+function safeActivityName(name) {
+  return String(name)
+    .trim()
+    .replace(/\./g, "．")
+    .replace(/#/g, "＃")
+    .replace(/\$/g, "＄")
+    .replace(/\//g, "／")
+    .replace(/\[/g, "［")
+    .replace(/\]/g, "］")
+    .replace(/\s+/g, " ");
+}
+
+let pendingUpload = null;
 
 window.uploadExcel = async function () {
   const fileInput = document.getElementById("excelFile");
+  const preview = document.getElementById("excelPreview");
   const file = fileInput.files[0];
 
   if (!file) {
@@ -212,13 +258,8 @@ window.uploadExcel = async function () {
   }
 
   const reader = new FileReader();
-  function cleanActivityName(name) {
-    return String(name)
-      .trim()
-      .replace(/[.#$/\[\]]/g, " ")
-      .replace(/\s+/g, " ");
-  }
-  reader.onload = async function (e) {
+
+  reader.onload = function (e) {
     try {
       if (!window.XLSX) {
         alert("엑셀 라이브러리를 불러오지 못했습니다.");
@@ -227,7 +268,6 @@ window.uploadExcel = async function () {
 
       const data = new Uint8Array(e.target.result);
       const workbook = window.XLSX.read(data, { type: "array" });
-
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
       const rows = window.XLSX.utils.sheet_to_json(sheet, {
@@ -244,17 +284,9 @@ window.uploadExcel = async function () {
         for (let c = 0; c < rows[r].length; c++) {
           const value = String(rows[r][c]).trim();
 
-          if (value === "반" || value === "학급") {
-            classCol = c;
-          }
-
-          if (value === "번호" || value === "학번") {
-            numberCol = c;
-          }
-
-          if (value === "이름" || value === "성명") {
-            nameCol = c;
-          }
+          if (value === "반" || value === "학급") classCol = c;
+          if (value === "번호" || value === "학번") numberCol = c;
+          if (value === "이름" || value === "성명") nameCol = c;
         }
 
         if (numberCol !== -1 && nameCol !== -1) {
@@ -274,7 +306,7 @@ window.uploadExcel = async function () {
       let newActivities = {};
 
       for (let c = nameCol + 1; c < headerRow.length; c++) {
-        const activityName = cleanActivityName(headerRow[c]);
+        const activityName = safeActivityName(headerRow[c]);
 
         if (activityName !== "") {
           newActivities[activityName] = ["__EMPTY__"];
@@ -302,8 +334,7 @@ window.uploadExcel = async function () {
         newStudents[studentId] = studentName;
 
         for (let c = nameCol + 1; c < headerRow.length; c++) {
-          const activityName = cleanActivityName(headerRow[c]);
-
+          const activityName = safeActivityName(headerRow[c]);
           const cellValue = String(row[c]).trim();
 
           if (activityName === "") continue;
@@ -319,36 +350,20 @@ window.uploadExcel = async function () {
         }
       }
 
-for (let id in newStudents) {
-  students[id] = newStudents[id];
-}
+      pendingUpload = {
+        students: newStudents,
+        activities: newActivities
+      };
 
-for (let activity in newActivities) {
-  if (!activities[activity]) {
-    activities[activity] = ["__EMPTY__"];
-  }
-
-  const newIds = newActivities[activity].filter(id => id !== "__EMPTY__");
-
-  if (newIds.length > 0) {
-    activities[activity] = activities[activity].filter(id => id !== "__EMPTY__");
-
-    newIds.forEach(id => {
-      if (!activities[activity].includes(id)) {
-        activities[activity].push(id);
-      }
-    });
-  }
-}
-
-      await saveData();
-      showData();
-
-      alert(
-        `업로드 완료\n학생 ${Object.keys(students).length}명\n활동 ${Object.keys(activities).length}개`
-      );
-
-      fileInput.value = "";
+      preview.innerHTML = `
+        <div class="box">
+          <h4>엑셀 업로드 미리보기</h4>
+          <p>추가/갱신될 학생 수: ${Object.keys(newStudents).length}명</p>
+          <p>반영될 활동 수: ${Object.keys(newActivities).length}개</p>
+          <button onclick="confirmExcelUpload()">이 데이터 반영</button>
+          <button onclick="cancelExcelUpload()">취소</button>
+        </div>
+      `;
 
     } catch (err) {
       console.error(err);
@@ -358,6 +373,51 @@ for (let activity in newActivities) {
 
   reader.readAsArrayBuffer(file);
 };
+
+window.confirmExcelUpload = async function () {
+  if (!pendingUpload) {
+    alert("반영할 엑셀 데이터가 없습니다.");
+    return;
+  }
+
+  for (let id in pendingUpload.students) {
+    students[id] = pendingUpload.students[id];
+  }
+
+  for (let activity in pendingUpload.activities) {
+    if (!activities[activity]) {
+      activities[activity] = ["__EMPTY__"];
+    }
+
+    const newIds = pendingUpload.activities[activity].filter(id => id !== "__EMPTY__");
+
+    if (newIds.length > 0) {
+      activities[activity] = activities[activity].filter(id => id !== "__EMPTY__");
+
+      newIds.forEach(id => {
+        if (!activities[activity].includes(id)) {
+          activities[activity].push(id);
+        }
+      });
+    }
+  }
+
+  await saveData();
+  showData();
+
+  document.getElementById("excelPreview").innerHTML = "";
+  document.getElementById("excelFile").value = "";
+  pendingUpload = null;
+
+  alert("엑셀 데이터가 반영되었습니다.");
+};
+
+window.cancelExcelUpload = function () {
+  pendingUpload = null;
+  document.getElementById("excelPreview").innerHTML = "";
+  document.getElementById("excelFile").value = "";
+};
+
     window.searchStudent = function () {
       const id = document.getElementById("searchId").value.trim();
       const result = document.getElementById("result");
@@ -430,7 +490,7 @@ window.loginAdmin = async function () {
     };
 
     window.addActivity = async function () {
-      const activity = document.getElementById("activityName").value.trim();
+			const activity = safeActivityName(document.getElementById("activityName").value);
 
       if (activity === "") {
         alert("활동 이름을 입력하세요.");
@@ -625,6 +685,86 @@ window.loginAdmin = async function () {
       alert("모든 활동 데이터가 삭제되었습니다.");
     };
 
+window.undoLastChange = async function () {
+  if (undoStack.length === 0) {
+    alert("되돌릴 작업이 없습니다.");
+    return;
+  }
+
+  const previous = undoStack.pop();
+
+  students = previous.students || {};
+  activities = previous.activities || {};
+
+  const passwordSnapshot = await get(ref(db, "adminPassword"));
+  const currentPassword = passwordSnapshot.val() || "";
+
+  await set(ref(db, "/"), {
+    students: students,
+    activities: activities,
+    adminPassword: currentPassword
+  });
+
+  lastSavedState = cloneData({
+    students: students,
+    activities: activities
+  });
+
+  showData();
+  updateUndoStatus();
+
+  alert("한 단계 되돌렸습니다.");
+};
+
+function updateUndoStatus() {
+  const undoStatus = document.getElementById("undoStatus");
+  if (!undoStatus) return;
+
+  undoStatus.innerHTML = `<p>되돌릴 수 있는 작업: ${undoStack.length}개</p>`;
+}
+
+window.downloadBackupExcel = function () {
+  const studentRows = [["학번", "이름", "신청 활동"]];
+
+  for (let id in students) {
+    let myActivities = [];
+
+    for (let activity in activities) {
+      if (activities[activity].includes(id)) {
+        myActivities.push(activity);
+      }
+    }
+
+    studentRows.push([
+      id,
+      students[id],
+      myActivities.join(", ")
+    ]);
+  }
+
+  const activityRows = [["활동명", "신청 학생 수", "신청 학번"]];
+
+  for (let activity in activities) {
+    const ids = activities[activity].filter(id => id !== "__EMPTY__");
+
+    activityRows.push([
+      activity,
+      ids.length,
+      ids.join(", ")
+    ]);
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  const wsStudents = XLSX.utils.aoa_to_sheet(studentRows);
+  const wsActivities = XLSX.utils.aoa_to_sheet(activityRows);
+
+  XLSX.utils.book_append_sheet(wb, wsStudents, "학생별 활동");
+  XLSX.utils.book_append_sheet(wb, wsActivities, "활동별 학생");
+
+  XLSX.writeFile(wb, "학생활동_백업.xlsx");
+};
+
 function showData() {
   const dataView = document.getElementById("dataView");
   if (!dataView) return;
@@ -719,6 +859,7 @@ enterKey("studentId", addStudent);
 enterKey("studentName", addStudent);
 enterKey("activityName", addActivity);
 enterKey("activityStudentId", addStudentToActivity);
+enterKey("removeActivityStudentId", removeStudentFromActivity);
 enterKey("deleteStudentId", deleteStudent);
 enterKey("deleteActivityName", deleteActivity);
     loadData();
