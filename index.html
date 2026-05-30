@@ -320,8 +320,27 @@ window.uploadExcel = async function () {
         }
       }
 
-      students = newStudents;
-      activities = newActivities;
+for (let id in newStudents) {
+  students[id] = newStudents[id];
+}
+
+for (let activity in newActivities) {
+  if (!activities[activity]) {
+    activities[activity] = ["__EMPTY__"];
+  }
+
+  const newIds = newActivities[activity].filter(id => id !== "__EMPTY__");
+
+  if (newIds.length > 0) {
+    activities[activity] = activities[activity].filter(id => id !== "__EMPTY__");
+
+    newIds.forEach(id => {
+      if (!activities[activity].includes(id)) {
+        activities[activity].push(id);
+      }
+    });
+  }
+}
 
       await saveData();
       showData();
