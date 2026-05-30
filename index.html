@@ -86,6 +86,18 @@ th, td {
       flex: 1;
     }
 
+#adminOpenBtn {
+  position: fixed;
+  bottom: 25px;
+  left: 8px;
+  font-size: 11px;
+  color: #999;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 9999;
+}
+	  
 	  #versionView {
   position: fixed;
   bottom: 6px;
@@ -110,11 +122,13 @@ th, td {
     <div id="result"></div>
   </div>
 
-  <div class="box">
-    <h2>관리자 로그인</h2>
-    <input type="password" id="adminPw" placeholder="관리자 비밀번호">
-    <button onclick="loginAdmin()">로그인</button>
-  </div>
+<button id="adminOpenBtn" onclick="showAdminLogin()">관리자</button>
+
+<div id="adminLoginBox" class="box hidden">
+  <h2>관리자 로그인</h2>
+  <input type="password" id="adminPw" placeholder="관리자 비밀번호">
+  <button onclick="loginAdmin()">로그인</button>
+</div>
 
 <div id="adminPage" class="box hidden">
   <h2>관리자 화면</h2>
@@ -425,20 +439,80 @@ window.uploadExcel = async function () {
         }
       }
 
-      pendingUpload = {
-        students: newStudents,
-        activities: newActivities
-      };
+pendingUpload = {
+  students: newStudents,
+  activities: newActivities
+};
 
-      preview.innerHTML = `
-        <div class="box">
-          <h4>엑셀 업로드 미리보기</h4>
-          <p>추가/갱신될 학생 수: ${Object.keys(newStudents).length}명</p>
-          <p>반영될 활동 수: ${Object.keys(newActivities).length}개</p>
-          <button onclick="confirmExcelUpload()">이 데이터 반영</button>
-          <button onclick="cancelExcelUpload()">취소</button>
-        </div>
-      `;
+let newStudentCount = 0;
+let changedNames = [];
+let newActivityNames = [];
+let newApplyCount = 0;
+let duplicateApplyCount = 0;
+
+for (let id in newStudents) {
+  if (!students[id]) {
+    newStudentCount++;
+  }
+
+  if (students[id] && students[id] !== newStudents[id]) {
+    changedNames.push(`${id}: ${students[id]} → ${newStudents[id]}`);
+  }
+}
+
+for (let activity in newActivities) {
+  if (!activities[activity]) {
+    newActivityNames.push(activity);
+  }
+
+  const ids = newActivities[activity].filter(id => id !== "__EMPTY__");
+
+  ids.forEach(id => {
+    if (activities[activity] && activities[activity].includes(id)) {
+      duplicateApplyCount++;
+    } else {
+      newApplyCount++;
+    }
+  });
+}
+
+const changedNamePreview = changedNames.length > 0
+  ? changedNames.slice(0, 30).map(x => `<li>${x}</li>`).join("")
+  : "<li>없음</li>";
+
+const newActivityPreview = newActivityNames.length > 0
+  ? newActivityNames.slice(0, 30).map(x => `<li>${x}</li>`).join("")
+  : "<li>없음</li>";
+
+preview.innerHTML = `
+  <div class="box">
+    <h4>엑셀 업로드 미리보기</h4>
+
+    <p>전체 학생 수: ${Object.keys(newStudents).length}명</p>
+    <p>전체 활동 수: ${Object.keys(newActivities).length}개</p>
+    <p>신규 학생: ${newStudentCount}명</p>
+    <p>이름 변경 예정: ${changedNames.length}명</p>
+    <p>신규 활동: ${newActivityNames.length}개</p>
+    <p>새로 추가될 신청 기록: ${newApplyCount}건</p>
+    <p>중복으로 제외될 신청 기록: ${duplicateApplyCount}건</p>
+
+    <details>
+      <summary>이름 변경 예정 학생 보기</summary>
+      <ul>${changedNamePreview}</ul>
+      ${changedNames.length > 30 ? `<p>외 ${changedNames.length - 30}건 더 있음</p>` : ""}
+    </details>
+
+    <details>
+      <summary>신규 활동 보기</summary>
+      <ul>${newActivityPreview}</ul>
+      ${newActivityNames.length > 30 ? `<p>외 ${newActivityNames.length - 30}개 더 있음</p>` : ""}
+    </details>
+
+    <br>
+    <button onclick="confirmExcelUpload()">이 데이터 반영</button>
+    <button onclick="cancelExcelUpload()">취소</button>
+  </div>
+`;
 
     } catch (err) {
       console.error(err);
@@ -546,6 +620,12 @@ window.cancelExcelUpload = function () {
 
       result.innerHTML = html;
     };
+
+window.showAdminLogin = function () {
+  document.getElementById("adminLoginBox").classList.remove("hidden");
+  document.getElementById("adminPw").focus();
+};
+	  
 window.loginAdmin = async function () {
   const pw = document.getElementById("adminPw").value.trim();
 
@@ -553,10 +633,13 @@ window.loginAdmin = async function () {
     const snapshot = await get(ref(db, "adminPassword"));
     const realPassword = String(snapshot.val()).trim();
 
-    if (pw === realPassword) {
-      document.getElementById("adminPage").classList.remove("hidden");
-      showData();
-    } else {
+if (pw === realPassword) {
+  document.getElementById("adminLoginBox").classList.add("hidden");
+  document.getElementById("adminPage").classList.remove("hidden");
+  showData();
+}
+	
+	else {
       alert("관리자 비밀번호가 틀렸습니다.");
     }
 
