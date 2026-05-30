@@ -39,6 +39,19 @@
       display: none;
     }
 
+details {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+summary {
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
     li {
       margin: 7px 0;
     }
@@ -90,22 +103,56 @@ th, td {
     <button onclick="loginAdmin()">로그인</button>
   </div>
 
-  <div id="adminPage" class="box hidden">
-    <h2>관리자 화면</h2>
+<div id="adminPage" class="box hidden">
+  <h2>관리자 화면</h2>
+
+  <details open>
+    <summary>1. 엑셀, 백업 관리</summary>
 
     <h3>엑셀 업로드</h3>
-		<input type="file" id="excelFile" accept=".xlsx,.xls">
-		<button onclick="uploadExcel()">엑셀 미리보기</button>
-		<div id="excelPreview"></div>
+    <input type="file" id="excelFile" accept=".xlsx,.xls">
+    <button onclick="uploadExcel()">엑셀 미리보기</button>
+    <div id="excelPreview"></div>
 
-    <h3>학생 추가</h3>
-    <input type="text" id="studentId" placeholder="학번">
-    <input type="text" id="studentName" placeholder="이름">
-    <button onclick="addStudent()">학생 추가</button>
+    <h3>현재 데이터 엑셀 다운로드</h3>
+    <button onclick="downloadBackupExcel()">현재 데이터 엑셀 다운로드</button>
+  </details>
 
-    <h3>활동 추가</h3>
-    <input type="text" id="activityName" placeholder="활동 이름">
-    <button onclick="addActivity()">활동 추가</button>
+  <details>
+    <summary>2. 학생, 활동 관리</summary>
+
+    <div class="data-grid">
+      <div class="data-column">
+        <h3>학생 추가</h3>
+        <input type="text" id="studentId" placeholder="학번">
+        <input type="text" id="studentName" placeholder="이름">
+        <button onclick="addStudent()">학생 추가</button>
+      </div>
+
+      <div class="data-column">
+        <h3>학생 삭제</h3>
+        <input type="text" id="deleteStudentId" placeholder="삭제할 학번">
+        <button onclick="deleteStudent()">학생 삭제</button>
+      </div>
+    </div>
+
+    <div class="data-grid">
+      <div class="data-column">
+        <h3>활동 추가</h3>
+        <input type="text" id="activityName" placeholder="활동 이름">
+        <button onclick="addActivity()">활동 추가</button>
+      </div>
+
+      <div class="data-column">
+        <h3>활동 삭제</h3>
+        <input type="text" id="deleteActivityName" placeholder="삭제할 활동">
+        <button onclick="deleteActivity()">활동 삭제</button>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>3. 신청, 조회 관리</summary>
 
     <h3>활동에 학생 추가</h3>
     <select id="activityInput">
@@ -113,55 +160,49 @@ th, td {
     </select>
     <input type="text" id="activityStudentId" placeholder="학생 학번">
     <button onclick="addStudentToActivity()">신청 추가</button>
-    
-<h3>활동에서 학생 삭제</h3>
-<select id="removeActivityInput">
-  <option value="">활동 선택</option>
-</select>
-<input type="text" id="removeActivityStudentId" placeholder="학생 학번">
-<button onclick="removeStudentFromActivity()">신청 삭제</button>
-    
+
+    <h3>활동에서 학생 삭제</h3>
+    <select id="removeActivityInput">
+      <option value="">활동 선택</option>
+    </select>
+    <input type="text" id="removeActivityStudentId" placeholder="학생 학번">
+    <button onclick="removeStudentFromActivity()">신청 삭제</button>
+
     <h3>활동별 학생 검색</h3>
     <select id="searchActivityName">
       <option value="">활동 선택</option>
     </select>
     <button onclick="searchActivity()">활동 검색</button>
     <div id="activitySearchResult"></div>
+  </details>
 
-    <div class="delete-grid">
-      <div class="delete-column">
-        <h3>학생 삭제</h3>
-        <input type="text" id="deleteStudentId" placeholder="삭제할 학번">
-        <button onclick="deleteStudent()">학생 삭제</button>
-      </div>
+  <details>
+    <summary>4. 전체 데이터 관리</summary>
 
-      <div class="delete-column">
-        <h3>활동 삭제</h3>
-        <input type="text" id="deleteActivityName" placeholder="삭제할 활동">
-        <button onclick="deleteActivity()">활동 삭제</button>
-      </div>
-    </div>
+    <h3>한 단계 뒤로가기</h3>
+    <button onclick="undoLastChange()">한 단계 뒤로가기</button>
+    <div id="undoStatus"></div>
 
     <div class="reset-grid">
       <div class="reset-column">
-        <h3>학생 데이터 초기화</h3>
+        <h3>학생 전체 삭제</h3>
         <button onclick="resetStudents()">학생 전체 삭제</button>
       </div>
 
       <div class="reset-column">
-        <h3>활동 데이터 초기화</h3>
+        <h3>활동 전체 삭제</h3>
         <button onclick="resetActivities()">활동 전체 삭제</button>
       </div>
     </div>
+  </details>
 
-		<h3>관리 도구</h3>
-		<button onclick="undoLastChange()">한 단계 뒤로가기</button>
-		<button onclick="downloadBackupExcel()">현재 데이터 엑셀 다운로드</button>
-		<div id="undoStatus"></div>
+  <details>
+    <summary>5. 현재 데이터 보기</summary>
 
     <h3>현재 데이터</h3>
     <div id="dataView"></div>
-  </div>
+  </details>
+</div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
