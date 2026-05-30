@@ -239,11 +239,12 @@ th, td {
         await saveData();
       }
       lastSavedState = cloneData({
-        students: students,
-        activities: activities
-      });
-
-      showData();
+		  students: students,
+		  activities: activities
+	  });
+		loadHistoryFromBrowser();
+		showData();
+		
     }
 
     let undoStack = [];
@@ -280,10 +281,6 @@ async function saveData(recordUndo = true) {
   });
 }
 
-loadHistoryFromBrowser();
-	
-  updateUndoStatus();
-}
 
 function safeActivityName(name) {
   return String(name)
@@ -798,19 +795,7 @@ window.redoLastChange = async function () {
   alert("되돌린 작업을 다시 적용했습니다.");
 };
 
-  showData();
-  updateUndoStatus();
-
-  alert("되돌린 작업을 다시 적용했습니다.");
-};
-
-function updateUndoStatus() {
-}
-
-  undoStatus.innerHTML = `
-    <p>뒤로가기 가능 작업: ${undoStack.length}개</p>
-    <p>다시 적용 가능 작업: ${redoStack.length}개</p>
-  `;
+  function updateUndoStatus() {
 }
 
 window.downloadBackupExcel = function () {
