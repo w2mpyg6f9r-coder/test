@@ -896,23 +896,39 @@ function showData() {
   updateActivitySelects();
 }
 
-    function updateActivitySelects() {
-      const activityInput = document.getElementById("activityInput");
-      const removeActivityInput = document.getElementById("removeActivityInput");
-      const searchActivityName = document.getElementById("searchActivityName");
+function updateActivitySelects() {
+  const activityInput = document.getElementById("activityInput");
+  const removeActivityInput = document.getElementById("removeActivityInput");
+  const searchActivityName = document.getElementById("searchActivityName");
 
-      if (!activityInput || !removeActivityInput || !searchActivityName) return;
+  if (!activityInput || !removeActivityInput || !searchActivityName) return;
 
-      activityInput.innerHTML = '<option value="">활동 선택</option>';
-removeActivityInput.innerHTML = '<option value="">활동 선택</option>';
-searchActivityName.innerHTML = '<option value="">활동 선택</option>';
-      
-      for (let activity in activities) {
-        activityInput.innerHTML += `<option value="${activity}">${activity}</option>`;
-removeActivityInput.innerHTML += `<option value="${activity}">${activity}</option>`;
-searchActivityName.innerHTML += `<option value="${activity}">${activity}</option>`;
-      }
-    }
+  const selectedAddActivity = activityInput.value;
+  const selectedRemoveActivity = removeActivityInput.value;
+  const selectedSearchActivity = searchActivityName.value;
+
+  activityInput.innerHTML = '<option value="">활동 선택</option>';
+  removeActivityInput.innerHTML = '<option value="">활동 선택</option>';
+  searchActivityName.innerHTML = '<option value="">활동 선택</option>';
+
+  for (let activity in activities) {
+    activityInput.innerHTML += `<option value="${activity}">${activity}</option>`;
+    removeActivityInput.innerHTML += `<option value="${activity}">${activity}</option>`;
+    searchActivityName.innerHTML += `<option value="${activity}">${activity}</option>`;
+  }
+
+  if (activities[selectedAddActivity]) {
+    activityInput.value = selectedAddActivity;
+  }
+
+  if (activities[selectedRemoveActivity]) {
+    removeActivityInput.value = selectedRemoveActivity;
+  }
+
+  if (activities[selectedSearchActivity]) {
+    searchActivityName.value = selectedSearchActivity;
+  }
+}
 
 function moveFocusOnEnter(inputId, nextInputId) {
   const input = document.getElementById(inputId);
