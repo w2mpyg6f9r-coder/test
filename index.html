@@ -254,6 +254,8 @@ th, td {
     let activities = {};
 	let dataVersion = 0;
 
+	 let lastSearchedActivity = "";
+	  
     async function loadData() {
       const snapshot = await get(ref(db, "/"));
 
@@ -587,39 +589,39 @@ window.cancelExcelUpload = function () {
   document.getElementById("excelFile").value = "";
 };
 
-    window.searchStudent = function () {
-      const id = document.getElementById("searchId").value.trim();
-      const result = document.getElementById("result");
+window.searchStudent = function () {
+  const id = document.getElementById("searchId").value.trim();
+  const result = document.getElementById("result");
 
-      if (!students[id]) {
-        result.innerHTML = "<p>해당 학번의 학생을 찾을 수 없습니다.</p>";
-        return;
-      }
+  if (!students[id]) {
+    result.innerHTML = "<p>해당 학번의 학생을 찾을 수 없습니다.</p>";
+    return;
+  }
 
-      let myActivities = [];
+  let myActivities = [];
 
-      for (let activity in activities) {
-        if (activities[activity].includes(id)) {
-          myActivities.push(activity);
-        }
-      }
+  for (let activity in activities) {
+    if (activities[activity].includes(id)) {
+      myActivities.push(activity);
+    }
+  }
 
-      let html = `<h3>${students[id]} 학생</h3>`;
-      html += `<p>학번: ${id}</p>`;
-      html += `<h4>신청한 활동</h4>`;
+  let html = `<h3>${students[id]} 학생</h3>`;
+  html += `<p>학번: ${id}</p>`;
+  html += `<h4>신청한 활동: 총 ${myActivities.length}개</h4>`;
 
-      if (myActivities.length === 0) {
-        html += "<p>신청한 활동이 없습니다.</p>";
-      } else {
-        html += "<ul>";
-        myActivities.forEach(activity => {
-          html += `<li>${activity}</li>`;
-        });
-        html += "</ul>";
-      }
+  if (myActivities.length === 0) {
+    html += "<p>신청한 활동이 없습니다.</p>";
+  } else {
+    html += "<ol>";
+    myActivities.forEach(activity => {
+      html += `<li>${activity}</li>`;
+    });
+    html += "</ol>";
+  }
 
-      result.innerHTML = html;
-    };
+  result.innerHTML = html;
+};
 
 window.showAdminLogin = function () {
   document.getElementById("adminLoginBox").classList.remove("hidden");
@@ -759,32 +761,37 @@ window.addStudent = async function () {
   document.getElementById("removeActivityStudentId").value = "";
 };
     
-    window.searchActivity = function () {
-      const activity = document.getElementById("searchActivityName").value.trim();
-      const resultDiv = document.getElementById("activitySearchResult");
+window.searchActivity = function () {
+  const activity = document.getElementById("searchActivityName").value.trim();
+  const resultDiv = document.getElementById("activitySearchResult");
 
-      if (activity === "") {
-        resultDiv.innerHTML = "<p>활동을 선택하세요.</p>";
-        return;
-      }
+  if (activity === "") {
+    resultDiv.innerHTML = "<p>활동을 선택하세요.</p>";
+    lastSearchedActivity = "";
+    return;
+  }
 
-      const studentIds = activities[activity].filter(id => id !== "__EMPTY__");
+  const studentIds = activities[activity].filter(id => id !== "__EMPTY__");
+  lastSearchedActivity = activity;
 
-      let html = `<h4>${activity} 신청 학생 (총 ${studentIds.length}명)</h4>`;
+  let html = `<h4>${activity} 신청 학생 (총 ${studentIds.length}명)</h4>`;
 
-      if (studentIds.length === 0) {
-        html += "<p>신청한 학생이 없습니다.</p>";
-      } else {
-        html += "<ul>";
-        studentIds.forEach(id => {
-          const name = students[id] || "이름 없음";
-          html += `<li>${id} - ${name}</li>`;
-        });
-        html += "</ul>";
-      }
+  if (studentIds.length === 0) {
+    html += "<p>신청한 학생이 없습니다.</p>";
+  } else {
+    html += `<button onclick="downloadActivityExcel()">이 활동 명단 엑셀 다운로드</button>`;
+    html += "<ol>";
 
-      resultDiv.innerHTML = html;
-    };
+    studentIds.forEach(id => {
+      const name = students[id] || "이름 없음";
+      html += `<li>${id} - ${name}</li>`;
+    });
+
+    html += "</ol>";
+  }
+
+  resultDiv.innerHTML = html;
+};
 
     window.deleteStudent = async function () {
       const id = document.getElementById("deleteStudentId").value.trim();
@@ -935,6 +942,41 @@ window.redoLastChange = async function () {
   function updateUndoStatus() {
 }
 
+window.downloadActivityExcel = function () {
+  if (!lastSearchedActivity) {
+    alert("먼저 활동을 검색하세요.");
+    return;
+  }
+
+  const studentIds = activities[lastSearchedActivity].filter(id => id !== "__EMPTY__");
+
+  if (studentIds.length === 0) {
+    alert("다운로드할 학생이 없습니다.");
+    return;
+  }
+
+  const rows = [["활동명", "학번", "이름"]];
+
+  studentIds.forEach(id => {
+    rows.push([
+      lastSearchedActivity,
+      id,
+      students[id] || "이름 없음"
+    ]);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  XLSX.utils.book_append_sheet(wb, ws, "활동별 명단");
+
+  const safeFileName = lastSearchedActivity
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .slice(0, 30);
+
+  XLSX.writeFile(wb, `${safeFileName}_명단.xlsx`);
+};
+	  
 window.downloadBackupExcel = function () {
   const studentRows = [["학번", "이름", "신청 활동"]];
 
