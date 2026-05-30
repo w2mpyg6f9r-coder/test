@@ -212,10 +212,16 @@ function cloneData(data) {
   return JSON.parse(JSON.stringify(data));
 }
 
-async function saveData(recordUndo = true) {
-  if (recordUndo && lastSavedState) {
-    undoStack.push(cloneData(lastSavedState));
-  }
+async function saveData() {
+  const passwordSnapshot = await get(ref(db, "adminPassword"));
+  const currentPassword = passwordSnapshot.val() || "1234";
+
+  await set(ref(db, "/"), {
+    students: students,
+    activities: activities,
+    adminPassword: currentPassword
+  });
+}
 
   const passwordSnapshot = await get(ref(db, "adminPassword"));
   const currentPassword = passwordSnapshot.val() || "";
