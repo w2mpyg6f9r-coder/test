@@ -175,8 +175,7 @@ th, td {
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const ADMIN_PASSWORD = "1234";
-
+    
     let students = {};
     let activities = {};
 
@@ -393,16 +392,25 @@ for (let activity in newActivities) {
       result.innerHTML = html;
     };
 
-    window.loginAdmin = function () {
-      const pw = document.getElementById("adminPw").value;
+window.loginAdmin = async function () {
+  const pw = document.getElementById("adminPw").value;
 
-      if (pw === ADMIN_PASSWORD) {
-        document.getElementById("adminPage").classList.remove("hidden");
-        showData();
-      } else {
-        alert("관리자 비밀번호가 틀렸습니다.");
-      }
-    };
+  try {
+    const snapshot = await get(ref(db, "adminPassword"));
+    const realPassword = snapshot.val();
+
+    if (pw === realPassword) {
+      document.getElementById("adminPage").classList.remove("hidden");
+      showData();
+    } else {
+      alert("관리자 비밀번호가 틀렸습니다.");
+    }
+
+  } catch (error) {
+    console.error(error);
+    alert("비밀번호 확인 실패");
+  }
+};
 
     window.addStudent = async function () {
       const id = document.getElementById("studentId").value.trim();
