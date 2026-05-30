@@ -258,19 +258,11 @@ function cloneData(data) {
 async function saveData(recordUndo = true) {
   if (recordUndo && lastSavedState) {
     undoStack.push(cloneData(lastSavedState));
+    redoStack = [];
   }
-  if (recordUndo) {
-  redoStack = [];
-}
 
-  const passwordSnapshot = await get(ref(db, "adminPassword"));
-  const currentPassword = passwordSnapshot.val() || "1234";
-
-  await set(ref(db, "/"), {
-    students: students,
-    activities: activities,
-    adminPassword: currentPassword
-  });
+  await set(ref(db, "students"), students);
+  await set(ref(db, "activities"), activities);
 
   lastSavedState = cloneData({
     students: students,
@@ -748,14 +740,8 @@ window.undoLastChange = async function () {
   students = previous.students || {};
   activities = previous.activities || {};
 
-  const passwordSnapshot = await get(ref(db, "adminPassword"));
-  const currentPassword = passwordSnapshot.val() || "1234";
-
-  await set(ref(db, "/"), {
-    students: students,
-    activities: activities,
-    adminPassword: currentPassword
-  });
+  await set(ref(db, "students"), students);
+  await set(ref(db, "activities"), activities);
 
   lastSavedState = cloneData({
     students: students,
@@ -768,16 +754,6 @@ window.undoLastChange = async function () {
   alert("한 단계 뒤로 갔습니다.");
 };
 
-  lastSavedState = cloneData({
-    students: students,
-    activities: activities
-  });
-
-  showData();
-  updateUndoStatus();
-
-  alert("한 단계 되돌렸습니다.");
-};
 
 window.redoLastChange = async function () {
   if (redoStack.length === 0) {
@@ -795,14 +771,8 @@ window.redoLastChange = async function () {
   students = next.students || {};
   activities = next.activities || {};
 
-  const passwordSnapshot = await get(ref(db, "adminPassword"));
-  const currentPassword = passwordSnapshot.val() || "1234";
-
-  await set(ref(db, "/"), {
-    students: students,
-    activities: activities,
-    adminPassword: currentPassword
-  });
+await set(ref(db, "students"), students);
+await set(ref(db, "activities"), activities);
 
   lastSavedState = cloneData({
     students: students,
